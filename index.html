@@ -1,0 +1,1425 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>People Analytics: Jakten på Sanningen</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Font: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Chart.js för interaktiva HR-diagram -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    .fade-in {
+      animation: fadeIn 0.35s ease-out forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .choice-card {
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .choice-card:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.04);
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
+
+  <!-- Top Navigation & Game Telemetry Bar -->
+  <header class="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <!-- Brand / Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-sm font-bold text-lg">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+          </svg>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-slate-900 leading-tight">
+            People Analytics: <span class="text-indigo-600">Jakten på Sanningen</span>
+          </h1>
+          <p class="text-xs text-slate-500 font-medium">Utökad Edition • 8 Utredningsfall på TechCorp</p>
+        </div>
+      </div>
+
+      <!-- Status Indicators -->
+      <div class="flex items-center gap-2.5 sm:gap-4">
+        <!-- Chapter Progress Pill -->
+        <div class="bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-xl">
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Kapitel</span>
+            <span id="header-chapter" class="text-xs sm:text-sm font-extrabold text-slate-900">1 / 8</span>
+          </div>
+          <div class="w-20 sm:w-24 h-1.5 bg-slate-200 rounded-full overflow-hidden mt-1">
+            <div id="header-chapter-bar" class="h-full bg-slate-700 rounded-full transition-all duration-500" style="width: 12.5%"></div>
+          </div>
+        </div>
+
+        <!-- Points Pill -->
+        <div class="bg-amber-50 border border-amber-200/80 px-3 py-1.5 rounded-xl text-center">
+          <span class="block text-[10px] font-bold uppercase tracking-wider text-amber-700">Poäng</span>
+          <span id="header-points" class="text-sm sm:text-base font-extrabold text-amber-900">0</span>
+        </div>
+
+        <!-- Credibility Score Meter -->
+        <div class="bg-indigo-50 border border-indigo-100 px-3.5 py-1.5 rounded-xl flex items-center gap-2.5">
+          <div>
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-semibold text-indigo-900">Analytiker-trovärdighet</span>
+              <span id="header-score" class="text-xs sm:text-sm font-extrabold text-indigo-700">50%</span>
+            </div>
+            <div class="w-28 sm:w-32 h-1.5 bg-indigo-200 rounded-full overflow-hidden mt-1">
+              <div id="header-score-bar" class="h-full bg-indigo-600 rounded-full transition-all duration-500" style="width: 50%"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Game Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    
+    <div id="game-view" class="space-y-6 fade-in">
+      
+      <!-- Story & Narrative Card -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-7">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <span id="chapter-badge" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-100">
+            KAPITEL 1 • DIAGNOSTIK
+          </span>
+          <span id="chapter-topic" class="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Nyckeltal: Relativa vs. Absoluta tal
+          </span>
+        </div>
+        
+        <h2 id="chapter-title" class="text-xl sm:text-2xl font-extrabold text-slate-900 mb-3">
+          Relativa vs. Absoluta tal (Personalomsättning)
+        </h2>
+        
+        <div id="chapter-story" class="text-slate-600 text-sm sm:text-base leading-relaxed space-y-3">
+          <!-- Story text populated by JS -->
+        </div>
+      </section>
+
+      <!-- Middle Grid: Interactive Chart + HR Statistical Fact Box -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Interactive Data Visualization Panel -->
+        <section class="lg:col-span-7 bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+              <div>
+                <h3 id="chart-title" class="text-base font-bold text-slate-900">Personalomsättning per avdelning</h3>
+                <p id="chart-subtitle" class="text-xs text-slate-500">Växla mellan procent (%) och antal avhopp</p>
+              </div>
+              <!-- Dynamic Chart Controls -->
+              <div id="chart-controls" class="flex flex-wrap gap-1.5">
+                <!-- Controls injected dynamically per chapter -->
+              </div>
+            </div>
+
+            <!-- Responsive Chart Canvas Wrapper -->
+            <div class="relative w-full h-64 sm:h-72">
+              <canvas id="hrChart"></canvas>
+            </div>
+          </div>
+
+          <!-- Extra Data Table / Insight Strip below chart -->
+          <div id="chart-footnote" class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between flex-wrap gap-2">
+            <!-- Footnote injected dynamically -->
+          </div>
+        </section>
+
+        <!-- Educational HR Statistical Fact Box -->
+        <aside class="lg:col-span-5 bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl shadow-sm p-5 sm:p-6 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center gap-2.5 mb-4">
+              <div class="w-8 h-8 rounded-lg bg-amber-400/20 text-amber-300 flex items-center justify-center font-bold">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <span class="text-xs font-bold uppercase tracking-wider text-amber-300">HR-Statistik & Begrepp</span>
+            </div>
+
+            <h3 id="fact-title" class="text-lg font-bold text-white mb-2.5">
+              Personalomsättning & Basfrekvens
+            </h3>
+
+            <p id="fact-description" class="text-slate-300 text-sm leading-relaxed mb-4">
+              <!-- Fact description injected dynamically -->
+            </p>
+
+            <div id="fact-formula-box" class="bg-slate-950/60 border border-slate-700/80 rounded-xl p-3.5 mb-4">
+              <span class="block text-[11px] uppercase tracking-wider text-slate-400 font-semibold mb-1">Formel / Tumregel</span>
+              <code id="fact-formula" class="text-xs sm:text-sm text-indigo-300 font-mono block">
+                <!-- Formula injected dynamically -->
+              </code>
+            </div>
+          </div>
+
+          <div class="bg-white/10 rounded-xl p-3.5 border border-white/10">
+            <p class="text-xs text-slate-200 leading-relaxed">
+              <strong class="text-amber-300">Analytikerns tips:</strong> <span id="fact-tip">Titta aldrig enbart på procentsatser utan att väga in hur många personer som faktiskt berörs.</span>
+            </p>
+          </div>
+        </aside>
+      </div>
+
+      <!-- Decision Section -->
+      <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 sm:p-7">
+        <div class="mb-4">
+          <h3 class="text-base sm:text-lg font-bold text-slate-900">Vad blir din analytiska slutsats och rekommendation?</h3>
+          <p class="text-xs sm:text-sm text-slate-500">Utforska diagrammets knappar ovan innan du väljer det alternativ som bäst vilar på statistisk evidens.</p>
+        </div>
+
+        <div id="choices-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <!-- 3 to 4 Decision Buttons populated dynamically -->
+        </div>
+
+        <!-- Immediate Educational Feedback Panel (Hidden until choice is made) -->
+        <div id="feedback-panel" class="hidden mt-6 rounded-2xl p-5 sm:p-6 border transition-all">
+          <div class="flex items-start gap-3.5">
+            <div id="feedback-icon" class="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center font-bold text-lg">
+              <!-- Icon injected -->
+            </div>
+            <div class="flex-1">
+              <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                <h4 id="feedback-heading" class="text-base sm:text-lg font-extrabold">
+                  <!-- Heading injected -->
+                </h4>
+                <div class="flex items-center gap-2">
+                  <span id="feedback-points-delta" class="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-900/10 text-slate-900">
+                    +150 p
+                  </span>
+                  <span id="feedback-score-delta" class="text-xs font-bold px-2.5 py-1 rounded-full">
+                    +10% Trovärdighet
+                  </span>
+                </div>
+              </div>
+              <p id="feedback-explanation" class="text-sm leading-relaxed mt-1">
+                <!-- Detailed explanation injected -->
+              </p>
+              
+              <div class="mt-5 flex justify-end">
+                <button id="next-chapter-btn" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-sm transition cursor-pointer">
+                  <span>Nästa kapitel →</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Final Summary Screen (Hidden until game ends) -->
+    <div id="summary-view" class="hidden space-y-6 fade-in">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
+        <!-- Banner -->
+        <div class="bg-gradient-to-r from-indigo-600 via-indigo-700 to-slate-900 px-6 py-8 sm:px-10 sm:py-10 text-white text-center">
+          <span class="inline-block px-3.5 py-1 rounded-full bg-white/15 text-indigo-100 text-xs font-bold uppercase tracking-wider mb-3">
+            Samtliga 8 Utredningsfall Slutförda • TechCorp AB
+          </span>
+          <h2 id="final-rank-title" class="text-2xl sm:text-4xl font-extrabold tracking-tight mb-2">
+            Chief People Scientist
+          </h2>
+          <p id="final-rank-subtitle" class="text-indigo-100 text-sm sm:text-base max-w-2xl mx-auto">
+            Din förmåga att skilja på brus och verkliga samband har räddat TechCorp från dyra felbeslut.
+          </p>
+
+          <!-- Final Score Pills -->
+          <div class="mt-6 inline-flex flex-wrap justify-center items-center gap-4 sm:gap-6 bg-slate-950/40 border border-white/15 rounded-2xl px-6 py-4">
+            <div class="text-left">
+              <span class="block text-xs text-indigo-200 uppercase font-semibold">Totalpoäng</span>
+              <span id="final-points-value" class="text-2xl sm:text-3xl font-extrabold text-amber-300">1 200 p</span>
+            </div>
+            <div class="hidden sm:block h-10 w-px bg-white/20"></div>
+            <div class="text-left">
+              <span class="block text-xs text-indigo-200 uppercase font-semibold">Analytiker-trovärdighet</span>
+              <span id="final-score-value" class="text-2xl sm:text-3xl font-extrabold text-white">100%</span>
+            </div>
+            <div class="hidden sm:block h-10 w-px bg-white/20"></div>
+            <div class="text-left">
+              <span class="block text-xs text-indigo-200 uppercase font-semibold">Rätt diagnostiserade fall</span>
+              <span id="final-correct-count" class="text-2xl sm:text-3xl font-extrabold text-emerald-300">8 / 8</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown of Learned Concepts -->
+        <div class="p-6 sm:p-8 space-y-6">
+          <div>
+            <h3 class="text-lg font-bold text-slate-900 mb-1">Checklista: 8 HR-statistiska begrepp & fällor</h3>
+            <p class="text-sm text-slate-500">Här är en sammanfattning av alla utredningar du genomfört och vilka statistiska insikter du tar med dig:</p>
+          </div>
+
+          <div id="summary-recap-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Populated dynamically with player's results per chapter -->
+          </div>
+
+          <!-- Action Footer -->
+          <div class="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4">
+            <p class="text-xs text-slate-500">
+              Tips: Spela igen och testa andra svarsalternativ för att se hur de olika statistiska fällorna slår mot bolagets ekonomi!
+            </p>
+            <button id="restart-btn" class="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm shadow-sm transition cursor-pointer">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              <span>Spela igen</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <script>
+    /**
+     * PEOPLE ANALYTICS: JAKTEN PÅ SANNINGEN (UTÖKAD EDITION - 8 KAPITEL)
+     * Komplett spellogik, dataset och interaktiva Chart.js-visualiseringar.
+     */
+
+    const gameState = {
+      currentChapterIndex: 0,
+      credibility: 50, // Startar på 50%
+      points: 0,
+      answered: false,
+      history: [],
+      chartInstance: null,
+      activeToggle: 'default'
+    };
+
+    const chapters = [
+      {
+        id: 1,
+        badge: "KAPITEL 1 • VOLYM & PROCENT",
+        topic: "Relativa vs. Absoluta tal",
+        title: "Relativa vs. Absoluta tal (Personalomsättning)",
+        story: `
+          <p>Välkommen till din första dag som People Analyst på <strong>TechCorp AB</strong> (350 anställda). HR-direktören skickar ett brådskande mejl: <em>"Vår totala personalomsättning är 19,7% – långt över branschsnittet på 14%. Ledningen vill lägga hela räddningsbudgeten på Kundtjänst eftersom de har högst procentsats på 31%."</em></p>
+          <p>Du granskar avdelningarnas personalomsättning i relation till hur många som faktiskt jobbar där. Växla mellan <strong>procent (%)</strong> och <strong>antal personer</strong> i diagrammet innan du svarar.</p>
+        `,
+        chartTitle: "Personalomsättning per avdelning vs. Branschsnitt",
+        chartSubtitle: "Växla mellan relativ omsättning (%) och absolut antal avhopp",
+        footnoteLeft: "Kundtjänst: 15 av 48 har slutat • IT: 36 av 150 har slutat",
+        footnoteRight: "Ersättningskostnad IT: ~320 000 kr/pers • Kundtjänst: ~110 000 kr/pers",
+        factTitle: "Relativa vs. Absoluta tal (Base Rate)",
+        factDescription: "Personalomsättning (%) visar hur snabbt en grupp byts ut relativt sin storlek, men avslöjar inte den totala affärspåverkan. En lägre procentsats i en stor nyckelavdelning innebär ofta mångdubbelt fler förlorade medarbetare och högre kostnader.",
+        factFormula: "Turnover (%) = (Antal avhopp / Genomsnittligt antal anställda) × 100",
+        factTip: "Multiplicera alltid antalet avhopp med beräknad ersättningskostnad per roll för att se var den verkliga ekonomiska blödningen sker.",
+        controls: [
+          { id: 'rate', label: 'Visa Omsättning (%)' },
+          { id: 'headcount', label: 'Visa Antal avhopp (personer)' }
+        ],
+        choices: [
+          {
+            id: 'c1_a',
+            title: "Lägg 100% av budgeten på Kundtjänst (31%)",
+            desc: "Håll med ledningen: 31% är den högsta stapeln, så Kundtjänst måste prioriteras framför alla andra avdelningar.",
+            isOptimal: false,
+            scoreDelta: -10,
+            pointsDelta: 0,
+            feedbackTitle: "Fälla: Procentblindhet",
+            feedbackText: "Kundtjänst har visserligen högst andel (31% = 15 personer), men på IT har 36 personer slutat (24% av 150)! Eftersom IT-rekryteringar dessutom kostar nästan tre gånger mer per person står IT för mer än 70% av bolagets totala omsättningskostnad."
+          },
+          {
+            id: 'c1_b',
+            title: "Prioritera både IT (36 pers) och Kundtjänst (31%) med skilda spår",
+            desc: "Visa styrelsen att IT står för den största ekonomiska och volymmässiga förlusten (36 pers), medan Kundtjänst har ett akut strukturproblem (31%).",
+            isOptimal: true,
+            scoreDelta: +10,
+            pointsDelta: 150,
+            feedbackTitle: "Mitt i prick! Volym + Procent = Helhetsbild",
+            feedbackText: "Snyggt analyserat! Genom att växla till absoluta tal såg du att IT tappar mer än dubbelt så många medarbetare (36 st) som Kundtjänst (15 st). Båda behöver åtgärder, men med helt olika strategier."
+          },
+          {
+            id: 'c1_c',
+            title: "Fördela insatserna jämnt över samtliga fem avdelningar",
+            desc: "Eftersom snittet är 19,7% inför vi samma breda trivselpaket på Ekonomi, Marknad och Produkt också.",
+            isOptimal: false,
+            scoreDelta: -5,
+            pointsDelta: 25,
+            feedbackTitle: "Ineffektiv resursallokering",
+            feedbackText: "Marknad (9%) och Ekonomi/HR (6%) ligger redan långt under branschsnittet på 14%. Att sprida ut budgeten jämnt ger minimal effekt där problemen faktiskt finns."
+          },
+          {
+            id: 'c1_d',
+            title: "Avvakta ett år tills procenttalen jämnat ut sig",
+            desc: "Personalomsättning svänger naturligt, så vi bör inte göra något förrän Kundtjänst når 40%.",
+            isOptimal: false,
+            scoreDelta: -15,
+            pointsDelta: 0,
+            feedbackTitle: "Passivitet kostar miljoner",
+            feedbackText: "Med 69 tappade medarbetare på ett år (varav 36 på IT) förlorar TechCorp över 14 miljoner kronor i rekryterings- och upplärningskostnader om inget görs."
+          }
+        ]
+      },
+      {
+        id: 2,
+        badge: "KAPITEL 2 • ORSAK & VERKAN",
+        topic: "Korrelation vs. Kausalitet",
+        title: "Korrelation vs. Kausalitet (Espresso & Övertid)",
+        story: `
+          <p>Under ett chefsmöte lägger en avdelningschef fram en uppseendeväckande graf: <em>"Avdelningar som dricker flest koppar gratis espresso ur våra nya kaffemaskiner har också högst personalomsättning och stress! Vi borde stänga av espressomaskinerna direkt."</em></p>
+          <p>Du samkör kaffestatistiken med <strong>veckoövertid</strong> och <strong>ingångslöner</strong>. Klicka på diagrammets vyer för att avslöja den bakomliggande variabeln (confounder).</p>
+        `,
+        chartTitle: "Kaffekonsumtion vs. Veckoövertid per avdelning",
+        chartSubtitle: "Växla mellan espressokoppar/dag och genomsnittlig övertid/vecka",
+        footnoteLeft: "Kundtjänst övertid: 1,4 tim/v (men lön 18% under marknad)",
+        footnoteRight: "IT övertid: 9,4 tim/v • Sälj övertid: 6,8 tim/v",
+        factTitle: "Korrelation vs. Kausalitet (Confounding)",
+        factDescription: "När två variabler rör sig i takt (korrelation) betyder det inte att den ena orsakar den andra (kausalitet). Ofta finns en tredje dold variabel (confounding variable) som driver båda – exempelvis att hög arbetsbelastning leder till både ökat kaffedrickande och utbrändhet.",
+        factFormula: "Korrelation (r = 0,91) ≠ Kausalitet (Kaffe → Uppsägning)",
+        factTip: "Fråga alltid: 'Vilken tredje faktor kan orsaka både A och B samtidigt?'",
+        controls: [
+          { id: 'coffee', label: 'Visa Espressokoppar / dag' },
+          { id: 'overtime', label: 'Visa Verklig övertid (tim/v)' }
+        ],
+        choices: [
+          {
+            id: 'c2_a',
+            title: "Stäng av espressomaskinerna för att minska stressen",
+            desc: "Korrelationen mellan kaffe och uppsägningar är tydlig – tar vi bort kaffet minskar stressen.",
+            isOptimal: false,
+            scoreDelta: -15,
+            pointsDelta: 0,
+            feedbackTitle: "Klassisk skenkorrelation!",
+            feedbackText: "Kaffet är bara ett symptom! Utvecklarna på IT och säljarna dricker mer espresso för att orka med sin tunga arbetsbelastning. Att ta bort kaffet skulle sänka moralen ytterligare utan att lösa övertiden."
+          },
+          {
+            id: 'c2_b',
+            title: "Peka ut övertid som bakomliggande orsak på IT/Sälj – och låg lön på Kundtjänst",
+            desc: "Visa att kaffe samvarierar med övertid (9,4h/v på IT), medan Kundtjänst dricker lite kaffe men slutar på grund av låg grundlön.",
+            isOptimal: true,
+            scoreDelta: +10,
+            pointsDelta: 150,
+            feedbackTitle: "Klockren detektivinsats!",
+            feedbackText: "Du avslöjade den dolda variabeln (confoundern): arbetsbelastning/övertid! Samtidigt såg du att Kundtjänst inte alls har övertidsproblem (1,4h/v), utan lämnar på grund av lönenivån."
+          },
+          {
+            id: 'c2_c',
+            title: "Inför övertidsförbud på Kundtjänst",
+            desc: "Eftersom övertid orsakar uppsägningar förbjuder vi övertid på Kundtjänst först.",
+            isOptimal: false,
+            scoreDelta: -5,
+            pointsDelta: 25,
+            feedbackTitle: "Fel avdelning för den åtgärden",
+            feedbackText: "Kundtjänst jobbar redan i snitt bara 1,4 timmar övertid i veckan. Där hjälper inte ett övertidsstopp – det är på IT (9,4h/v) och Sälj (6,8h/v) som övertiden skenar."
+          }
+        ]
+      },
+      {
+        id: 3,
+        badge: "KAPITEL 3 • PARADOXEN",
+        topic: "Simpsons Paradox & Segmentering",
+        title: "Simpsons Paradox (Befordringsstatistik)",
+        story: `
+          <p>Fackklubben begär ett krismöte: <em>"Totalstatistiken för det senaste året visar att 45% i Grupp A blev befordrade, men bara 35% i Grupp B! Det tyder på systematisk orättvisa i våra befordringsprocesser."</em></p>
+          <p>Innan du drar slutsatser delar du upp siffrorna efter <strong>rollnivå (Junior vs. Senior)</strong>. Klicka på växlingsknappen i diagrammet för att se vad som händer när datan segmenteras!</p>
+        `,
+        chartTitle: "Befordringsgrad: Grupp A vs. Grupp B",
+        chartSubtitle: "Växla mellan sammanslagen totaldata och uppdelad data per rollnivå",
+        footnoteLeft: "Grupp A: 160 Junior-ansökningar, 40 Senior-ansökningar",
+        footnoteRight: "Grupp B: 40 Junior-ansökningar, 160 Senior-ansökningar",
+        factTitle: "Simpsons Paradox",
+        factDescription: "Simpsons paradox uppstår när en trend som syns i varje enskild delgrupp blir helt omvänd när grupperna slås ihop till ett enda genomsnitt. Det beror på att grupperna har olika fördelning över en dold variabel (här: konkurrensgraden i Senior- vs. Junior-roller).",
+        factFormula: "Totalt: A (45%) > B (35%)  MEN  Junior: B (65%) > A (60%) & Senior: B (25%) > A (20%)",
+        factTip: "Lita aldrig på aggregerade genomsnitt när undergrupperna har olika sammansättning.",
+        controls: [
+          { id: 'aggregated', label: 'Sammanslagen data (Totalt)' },
+          { id: 'segmented', label: 'Segmentera: Junior vs. Senior' }
+        ],
+        choices: [
+          {
+            id: 'c3_a',
+            title: "Ge facket rätt: Grupp B missgynnas i urvalet (35% mot 45%)",
+            desc: "Totalstatistiken bevisar att Grupp B väljs bort oftare, så vi måste ändra betygskriterierna.",
+            isOptimal: false,
+            scoreDelta: -15,
+            pointsDelta: 0,
+            feedbackTitle: "Du föll rakt i Simpsons paradox!",
+            feedbackText: "Titta på den segmenterade vyn: Grupp B har HÖGRE befordringsgrad än Grupp A i BÅDA kategorierna (65% mot 60% på Junior, och 25% mot 20% på Senior)! Det lägre totala snittet beror på att 80% i Grupp B söker Senior-roller där nålsögat är mycket trängre."
+          },
+          {
+            id: 'c3_b',
+            title: "Visa den segmenterade datan & skapa ett träningsprogram mot Senior-roller",
+            desc: "Bevisa att urvalet är rättvist inom varje nivå, men att många i Grupp B fastnar i flaskhalsen till Senior-roller och behöver mentorskap.",
+            isOptimal: true,
+            scoreDelta: +10,
+            pointsDelta: 150,
+            feedbackTitle: "Briljant! Du avslöjade Simpsons paradox",
+            feedbackText: "Genom att segmentera datan räddade du både HR och facket från ett stort missförstånd. Urvalet är inte diskriminerande – istället visar datan att ni bör stötta fler medarbetare att kvalificera sig för de krävande Senior-rollerna."
+          },
+          {
+            id: 'c3_c',
+            title: "Pausa alla befordringar tills siffrorna går ihop",
+            desc: "Eftersom siffrorna motsäger varandra fryser vi alla karriärsteg i ett halvår.",
+            isOptimal: false,
+            scoreDelta: -10,
+            pointsDelta: 10,
+            feedbackTitle: "Analysparalys skapar fler uppsägningar",
+            feedbackText: "Siffrorna motsäger inte varandra när man förstår viktningen – att frysa befordringar skulle bara driva upp personalomsättningen ytterligare."
+          }
+        ]
+      },
+      {
+        id: 4,
+        badge: "KAPITEL 4 • URVALSFÄLLAN",
+        topic: "Överlevnadsbias (Survivorship Bias)",
+        title: "Överlevnadsbias (Den mirakulösa eNPS-ökningen)",
+        story: `
+          <p>En månad senare jublar ledningsgruppen: <em>"Vår årliga medarbetarundersökning (eNPS) har skjutit i höjden från +10 till +38! Vår kultur är starkare än någonsin – krisen är över!"</em></p>
+          <p>Du blir misstänksam. När skickades enkäten ut? Du jämför svarsgruppen med de <strong>40 medarbetare som nyligen slutade</strong> (och som inte längre fanns kvar i enkätutskicket). Klicka på knappen i diagrammet för att inkludera bortfallet!</p>
+        `,
+        chartTitle: "Medarbetarlojalitet (eNPS): Uppmätt vs. Justerat för avhopp",
+        chartSubtitle: "Växla mellan enkätsvar från kvarvarande personal och verklig bild inklusive avhopp",
+        footnoteLeft: "Enkätsvar: 280 svarande (eNPS +38) • Svarsfrekvens: 90%",
+        footnoteRight: "40 missnöjda medarbetare slutade veckorna före utskicket",
+        factTitle: "Överlevnadsbias (Survivorship Bias)",
+        factDescription: "Överlevnadsbias uppstår när man bara analyserar de individer som 'överlevt' (stannat kvar) i en process och glömmer dem som fallit ifrån. När de mest missnöjda medarbetarna slutar stiger genomsnittsbetyget automatiskt bland de kvarvarande – trots att ingenting blivit bättre!",
+        factFormula: "eNPS = % Ambassadörer (9–10) − % Kritiker (0–6)",
+        factTip: "Följ alltid upp exit-intervjuer och pulsmätningar löpande så att du fångar upp kritiker innan de lämnar urvalet.",
+        controls: [
+          { id: 'survey_only', label: 'Visa Enkätresultat (Kvarvarande)' },
+          { id: 'with_exits', label: 'Inkludera de 40 som slutat' }
+        ],
+        choices: [
+          {
+            id: 'c4_a',
+            title: "Fira framgången och ställ in åtgärdsplanen",
+            desc: "eNPS på +38 är världsklass! Vi behöver inte längre lägga pengar på att minska personalomsättningen.",
+            isOptimal: false,
+            scoreDelta: -15,
+            pointsDelta: 0,
+            feedbackTitle: "Fälla: Överlevnadsbias!",
+            feedbackText: "eNPS steg enbart för att de 40 mest missnöjda kritikerna redan hunnit sluta innan enkäten skickades ut! Att fira +38 vore som att säga att sjukhuset blivit friskare för att de svårast sjuka skrivits ut."
+          },
+          {
+            id: 'c4_b',
+            title: "Förklara överlevnadsbias för ledningen & väg in exit-data",
+            desc: "Visa att om de 40 avhoppade kritikerna räknas med ligger det verkliga eNPS-värdet kvar runt +12. Vi måste agera nu.",
+            isOptimal: true,
+            scoreDelta: +10,
+            pointsDelta: 150,
+            feedbackTitle: "Skarp analytisk blick!",
+            feedbackText: "Du hindrade ledningen från att invaggas i falsk trygghet. Genom att kombinera eNPS med avgångsstatistik visade du att den höga siffran var en matematisk effekt av att kritikerna redan lämnat bolaget."
+          },
+          {
+            id: 'c4_c',
+            title: "Skicka ut enkäten en gång i veckan till samma personer",
+            desc: "Fler mätningar kommer automatiskt göra personalen mer lojal.",
+            isOptimal: false,
+            scoreDelta: -5,
+            pointsDelta: 25,
+            feedbackTitle: "Enkättrötthet löser inte grundproblemet",
+            feedbackText: "Tätare utskick utan åtgärder skapar bara enkättrötthet och sänker svarsfrekvensen."
+          }
+        ]
+      },
+      {
+        id: 5,
+        badge: "KAPITEL 5 • FÖRDELNING & EXTREMvärden",
+        topic: "Medelvärde vs. Median",
+        title: "Medelvärde vs. Median (Lönerevisionen)",
+        story: `
+          <p>Inför lönerevisionen hävdar marknadschefen att hans team är välbetalt: <em>"Vår snittlön på Marknad är 52 000 kr/mån, vilket ligger tydligt över marknadssnittet på 48 000 kr! Vi behöver inga extra lönemedel."</em></p>
+          <p>Du misstänker att enstaka extremvärden (outliers) drar upp genomsnittet. Växla mellan <strong>Medelvärde (snitt)</strong> och <strong>Median</strong> i diagrammet för att se lönefördelningen.</p>
+        `,
+        chartTitle: "Månadslön på Marknad vs. Branschbenchmark (SEK)",
+        chartSubtitle: "Växla mellan Medelvärde (Mean) och Medianlön",
+        footnoteLeft: "Marknadschef (VP): 145 000 kr/mån • 80% av specialisterna: 39 000 kr/mån",
+        footnoteRight: "Marknadsbenchmark (Median): 48 000 kr/mån",
+        factTitle: "Medelvärde (Mean) vs. Median",
+        factDescription: "Medelvärdet är summan av alla värden delat med antalet individer och är extremt känsligt för höga extremvärden (outliers). Medianen är det mittersta värdet när alla löner sorteras från lägst till högst – och ger en mycket rättvisare bild av vad en 'typisk' medarbetare tjänar.",
+        factFormula: "Snedfördelad data: Medelvärde (52 000 kr) >> Median (39 000 kr)",
+        factTip: "Använd alltid median och kvartiler (P25, P50, P75) när du analyserar löner, bonusar eller sjukdagar.",
+        controls: [
+          { id: 'mean', label: 'Visa Medelvärde (Snittlön)' },
+          { id: 'median', label: 'Visa Medianlön (P50)' }
+        ],
+        choices: [
+          {
+            id: 'c5_a',
+            title: "Neka lönejustering – 52 000 kr är över marknaden",
+            desc: "Medelvärdet visar att teamet redan tjänar 4 000 kr mer än branschsnittet.",
+            isOptimal: false,
+            scoreDelta: -15,
+            pointsDelta: 0,
+            feedbackTitle: "Fälla: Extremvärdes-bias (Outlier skew)",
+            feedbackText: "Chefen tjänar 145 000 kr/mån, vilket drar upp hela avdelningens medelvärde! I verkligheten tjänar 80% av specialisterna bara 39 000 kr – hela 9 000 kr under marknadens median på 48 000 kr."
+          },
+          {
+            id: 'c5_b',
+            title: "Redovisa medianlönen (39 000 kr) & justera specialistlönerna",
+            desc: "Visa att chefens höga lön snedvrider medelvärdet och att specialisterna ligger 9 000 kr under marknadsmedianen – en stor flyktrisk.",
+            isOptimal: true,
+            scoreDelta: +10,
+            pointsDelta: 150,
+            feedbackTitle: "Helt rätt! Medianen avslöjar sanningen",
+            feedbackText: "Genom att presentera medianlönen synliggjorde du en dold avgångsrisk bland dina marknadsspecialister innan konkurrenterna hann headhunta dem."
+          },
+          {
+            id: 'c5_c',
+            title: "Höj alla löner på Marknad med 10% rakt över",
+            desc: "Ge alla – inklusive chefen som tjänar 145 000 kr – 10% påslag.",
+            isOptimal: false,
+            scoreDelta: -5,
+            pointsDelta: 25,
+            feedbackTitle: "Onödigt dyrt i toppen",
+            feedbackText: "Att ge 10% på 145 000 kr slukar en stor del av lönepotten där behovet inte finns. Rikta istället potten mot specialisterna under medianen."
+          }
+        ]
+      },
+      {
+        id: 6,
+        badge: "KAPITEL 6 • ANSTÄLLNINGSTID",
+        topic: "Kohortanalys & Onboarding",
+        title: "Kohortanalys (Onboarding-fällan)",
+        story: `
+          <p>En styrelseledamot frågar: <em>"Hur ser personalomsättningen ut över tid? På totalnivå ser ju vår nyanställningstakt fin ut, men varför klagar teamledarna på att de ständigt får lära upp nya kollegor?"</em></p>
+          <p>Du delar in personalen i <strong>kohorter baserat på anställningstid (tenure)</strong>. Klicka på diagrammet för att bryta ner den stabila totalsiffran per anställningstid!</p>
+        `,
+        chartTitle: "Personalomsättning: Totalt vs. Per anställningstid (Kohort)",
+        chartSubtitle: "Växla mellan total omsättning och uppdelning per anställningstid",
+        footnoteLeft: "0–6 månader: 42% slutar • 6–12 månader: 24% slutar",
+        footnoteRight: "3+ år (Veteraner): Endast 5% slutar",
+        factTitle: "Kohortanalys (Tenure Cohorts)",
+        factDescription: "En kohortanalys grupperar anställda som började under samma period eller har samma anställningstid. Ett stabilt genomsnitt kan dölja en 'svängdörrseffekt' där nyanställda slutar inom de första månaderna medan en trogen kärna av veteraner håller nere totalsiffran.",
+        factFormula: "Tidig avgång (0–6 mån) = Antal som slutat < 6 mån / Totalt nyanställda",
+        factTip: "Hög omsättning under de första 6 månaderna beror nästan alltid på brister i rekryteringsförväntningar eller onboarding.",
+        controls: [
+          { id: 'overall', label: 'Visa Total omsättning' },
+          { id: 'cohorts', label: 'Segmentera per anställningstid' }
+        ],
+        choices: [
+          {
+            id: 'c6_a',
+            title: "Inför ett lojalitetsprogram för medarbetare som jobbat 3+ år",
+            desc: "Belöna veteranerna så att deras omsättning sjunker från 5% till 2%.",
+            isOptimal: false,
+            scoreDelta: -10,
+            pointsDelta: 10,
+            feedbackTitle: "Fel målgrupp!",
+            feedbackText: "Veteranerna (3+ år) trivs redan utmärkt och har bara 5% omsättning. Problemet är att 42% av alla nyanställda slutar redan under sina första 6 månader!"
+          },
+          {
+            id: 'c6_b',
+            title: "Gör om onboarding-processen och inför fadderskap första 90 dagarna",
+            desc: "Rikta insatserna mot 0–6-månaderskohorten där hela 42% slutar på grund av bristande introduktion och otydliga förväntningar.",
+            isOptimal: true,
+            scoreDelta: +10,
+            pointsDelta: 150,
+            feedbackTitle: "Spot on! Kohortanalysen träffade rätt",
+            feedbackText: "När nästan hälften av nyanställda lämnar inom 6 månader kastar bolaget rekryteringspengar i sjön. En strukturerad 90-dagars onboarding och tydligare rollbeskrivningar i rekryteringen ger direkt effekt."
+          },
+          {
+            id: 'c6_c',
+            title: "Anställ fler rekryterare för att fylla luckorna snabbare",
+            desc: "Om 42% slutar tidigt behöver vi bara dubbla inflödet av nya kandidater.",
+            isOptimal: false,
+            scoreDelta: -15,
+            pointsDelta: 0,
+            feedbackTitle: "Att hälla vatten i en läckande hink",
+            feedbackText: "Att rekrytera snabbare in i en trasig onboarding-process ökar bara kostnaderna och tröttar ut teamledarna ännu mer."
+          }
+        ]
+      },
+      {
+        id: 7,
+        badge: "KAPITEL 7 • STATISTISK OSÄKERHET",
+        topic: "Urvalsstorlek & De små talens lag",
+        title: "Urvalsstorlek & Statistisk Signifikans (Små team)",
+        story: `
+          <p>En larmrapport dyker upp i inkorgen: <em>"Personalomsättningen på Juridik & Admin sköt i höjden från 0% till 20% under det senaste kvartalet! Vi måste omedelbart sätta in krishjälp och ledarskapscoachning där!"</em></p>
+          <p>Du kollar hur många som jobbar på Juridik & Admin: <strong>totalt 5 personer</strong>, och 1 person gick just i planerad ålderspension. Växla vyn i diagrammet för att jämföra procent med teamstorlek.</p>
+        `,
+        chartTitle: "Kvartalsomsättning (%) vs. Teamstorlek (Antal anställda)",
+        chartSubtitle: "Växla mellan procentuell förändring och faktisk teamstorlek",
+        footnoteLeft: "Juridik & Admin: 1 pensionering av 5 anställda = 20%",
+        footnoteRight: "IT/Utveckling: 9 avhopp av 150 anställda = 6% (på ett kvartal)",
+        factTitle: "Urvalsstorlek & De små talens lag",
+        factDescription: "I små grupper (lågt N) skapar en enda händelse enorma procentuella svängningar utan att det finns någon statistiskt signifikant trend. Att dra stora strategiska slutsatser av enstaka individer i små team kallas 'de små talens lag' (Law of Small Numbers).",
+        factFormula: "1 person i ett team på 5 = 20% svängning (Hög varians / Brus)",
+        factTip: "Rapportera aldrig procentsatser för grupper under 10–15 personer utan att ange det faktiska antalet individer.",
+        controls: [
+          { id: 'pct_jump', label: 'Visa Kvartalsomsättning (%)' },
+          { id: 'team_size', label: 'Visa Teamstorlek (Antal personer)' }
+        ],
+        choices: [
+          {
+            id: 'c7_a',
+            title: "Starta ett akut krisprogram på Juridik & Admin (20%)",
+            desc: "En ökning från 0% till 20% på ett kvartal är den snabbaste procentuella ökningen i bolaget.",
+            isOptimal: false,
+            scoreDelta: -15,
+            pointsDelta: 0,
+            feedbackTitle: "Fälla: De små talens lag (Brus vs. Signal)",
+            feedbackText: "20% låter dramatiskt, men i ett team på 5 personer motsvarar det en enda person – som dessutom gick i planerad pension! Det är statistiskt brus, inte en kulturkris."
+          },
+          {
+            id: 'c7_b',
+            title: "Avfärda larmet som statistiskt brus & ersätt pensionsavgången",
+            desc: "Förklara att 1 person av 5 ger 20% volatilitet (lågt N) och att en planerad pensionering inte motiverar ett krispaket.",
+            isOptimal: true,
+            scoreDelta: +10,
+            pointsDelta: 150,
+            feedbackTitle: "Statistisk mognad på hög nivå!",
+            feedbackText: "Du skiljde på statistiskt brus och verkliga trender. Genom att skydda ledningen från att överreagera på små urval sparar du tid och förtroende."
+          },
+          {
+            id: 'c7_c',
+            title: "Slå ihop Juridik & Admin med Sälj i statistiken",
+            desc: "Då försvinner de 20 procenten i snittet så slipper vi se dem.",
+            isOptimal: false,
+            scoreDelta: -5,
+            pointsDelta: 25,
+            feedbackTitle: "Dölj inte data – sätt den i kontext",
+            feedbackText: "Att blanda ihop helt olika yrkesgrupper skapar bara nya dolda variabler. Bättre är att redovisa både procent och exakt antal (1/5)."
+          }
+        ]
+      },
+      {
+        id: 8,
+        badge: "KAPITEL 8 • STYRELSERUMMET",
+        topic: "Syntes, Prioritering & ROI",
+        title: "Styrelserummet (Slutgiltig åtgärdsplan)",
+        story: `
+          <p>Det är dags för slutpresentationen inför TechCorps styrelse. Du har en budget på <strong>2,0 miljoner SEK</strong> för att vända utvecklingen och få ner personalomsättningen från 19,7% till under branschsnittet på 14% inom 12 månader.</p>
+          <p>Du har nu hela pusslet klart från kapitel 1–7. Växla mellan <strong>Prognos för omsättning (%)</strong> och <strong>Beräknad nettobesparing (MSEK)</strong> i diagrammet och välj det vinnande strategipaketet!</p>
+        `,
+        chartTitle: "Effektanalys av 3 strategipaket (12 månaders sikt)",
+        chartSubtitle: "Växla mellan beräknad personalomsättning (%) och nettobesparing (MSEK)",
+        footnoteLeft: "Budgetram: 2,0 MSEK • Mål: < 14,0% personalomsättning",
+        footnoteRight: "Kombination av IT-avlastning, onboarding och medianjusterad lön ger störst hävstång",
+        factTitle: "Evidensbaserad HR-strategi & ROI",
+        factDescription: "Framgångsrik People Analytics handlar om att kombinera flera insikter till träffsäkra åtgärder: rikta resurser mot höga volymkostnader (IT), åtgärda tidiga avhopp (0–6 mån onboarding), justera snedvridna medianlöner (Marknad/Kundtjänst) och ignorera statistiskt brus.",
+        factFormula: "ROI (%) = ((Besparing av minskad omsättning − Budget) / Budget) × 100",
+        factTip: "En välriktad HR-investering betalar sig ofta 3–4 gånger om redan under det första verksamhetsåret.",
+        controls: [
+          { id: 'forecast', label: 'Visa Prognos: Omsättning (%)' },
+          { id: 'roi', label: 'Visa Nettobesparing (MSEK)' }
+        ],
+        choices: [
+          {
+            id: 'c8_a',
+            title: "Paket A: Generell löneökning + förmånspaket till alla 350 anställda",
+            desc: "Fördela 2,0 MSEK jämnt över samtliga avdelningar inklusive Juridik/Admin och Ekonomi.",
+            isOptimal: false,
+            scoreDelta: -10,
+            pointsDelta: 25,
+            feedbackTitle: "Låg träffsäkerhet och svag ROI",
+            feedbackText: "En generell utspädning ger ca 475 kr/mån per person och löser varken övertiden på IT, den trasiga onboardingen (42% avhopp) eller de låga medianlönerna på Marknad och Kundtjänst."
+          },
+          {
+            id: 'c8_b',
+            title: "Paket B: Datadriven trippelinsats (IT-avlastning, 90-dagars onboarding & medianlöner)",
+            desc: "1) Avlasta övertiden & stärk ledarskapet i IT, 2) Inför strukturerad 90-dagars onboarding, 3) Justera specialistlöner under medianen på Marknad & Kundtjänst.",
+            isOptimal: true,
+            scoreDelta: +15,
+            pointsDelta: 250,
+            feedbackTitle: "Mästerligt beslutsunderlag i styrelserummet!",
+            feedbackText: "Styrelsen godkänner planen enhälligt! Genom att agera exakt på dina statistiska fynd sjunker personalomsättningen till 12,8% och TechCorp gör en nettobesparing på 5,4 MSEK redan år ett."
+          },
+          {
+            id: 'c8_c',
+            title: "Paket C: Lägg hela budgeten på rekryteringsannonser & eNPS-enkäter",
+            desc: "Fortsätt mäta eNPS varje månad och anställ ersättare snabbare när folk slutar.",
+            isOptimal: false,
+            scoreDelta: -15,
+            pointsDelta: 0,
+            feedbackTitle: "Du mäter febern utan att ge medicin",
+            feedbackText: "Utan åtgärder mot övertid, onboarding och medianlöner fortsätter personalen sluta – och överlevnadsbias i enkäterna riskerar att dölja problemen igen."
+          }
+        ]
+      }
+    ];
+
+    // DOM-referenser
+    const elHeaderChapter = document.getElementById('header-chapter');
+    const elHeaderChapterBar = document.getElementById('header-chapter-bar');
+    const elHeaderPoints = document.getElementById('header-points');
+    const elHeaderScore = document.getElementById('header-score');
+    const elHeaderScoreBar = document.getElementById('header-score-bar');
+    const elGameView = document.getElementById('game-view');
+    const elSummaryView = document.getElementById('summary-view');
+
+    const elChapterBadge = document.getElementById('chapter-badge');
+    const elChapterTopic = document.getElementById('chapter-topic');
+    const elChapterTitle = document.getElementById('chapter-title');
+    const elChapterStory = document.getElementById('chapter-story');
+
+    const elChartTitle = document.getElementById('chart-title');
+    const elChartSubtitle = document.getElementById('chart-subtitle');
+    const elChartControls = document.getElementById('chart-controls');
+    const elFootnoteLeft = document.getElementById('chart-footnote');
+
+    const elFactTitle = document.getElementById('fact-title');
+    const elFactDescription = document.getElementById('fact-description');
+    const elFactFormula = document.getElementById('fact-formula');
+    const elFactTip = document.getElementById('fact-tip');
+
+    const elChoicesContainer = document.getElementById('choices-container');
+    const elFeedbackPanel = document.getElementById('feedback-panel');
+    const elFeedbackIcon = document.getElementById('feedback-icon');
+    const elFeedbackHeading = document.getElementById('feedback-heading');
+    const elFeedbackPointsDelta = document.getElementById('feedback-points-delta');
+    const elFeedbackScoreDelta = document.getElementById('feedback-score-delta');
+    const elFeedbackExplanation = document.getElementById('feedback-explanation');
+    const elNextChapterBtn = document.getElementById('next-chapter-btn');
+
+    // Uppdatera poäng, progress och trovärdighet i headern
+    function updateHeader() {
+      const currentNum = gameState.currentChapterIndex + 1;
+      const totalChapters = chapters.length;
+      elHeaderChapter.textContent = `${currentNum} / ${totalChapters}`;
+      elHeaderChapterBar.style.width = `${(currentNum / totalChapters) * 100}%`;
+
+      elHeaderPoints.textContent = `${gameState.points} p`;
+
+      const clampedScore = Math.max(0, Math.min(100, gameState.credibility));
+      gameState.credibility = clampedScore;
+      elHeaderScore.textContent = `${clampedScore}%`;
+      elHeaderScoreBar.style.width = `${clampedScore}%`;
+
+      if (clampedScore >= 75) {
+        elHeaderScoreBar.className = "h-full bg-emerald-500 rounded-full transition-all duration-500";
+      } else if (clampedScore >= 45) {
+        elHeaderScoreBar.className = "h-full bg-indigo-600 rounded-full transition-all duration-500";
+      } else {
+        elHeaderScoreBar.className = "h-full bg-amber-500 rounded-full transition-all duration-500";
+      }
+    }
+
+    // Bygg / uppdatera Chart.js-diagram baserat på kapitel och aktiv flik
+    function renderChart(chapterIndex, mode) {
+      const ctx = document.getElementById('hrChart').getContext('2d');
+      if (gameState.chartInstance) {
+        gameState.chartInstance.destroy();
+      }
+
+      let config = {};
+
+      if (chapterIndex === 0) {
+        // KAPITEL 1: Relativa (%) vs Absoluta tal (personer)
+        const labels = ['IT/Utveckling (150)', 'Sälj (82)', 'Kundtjänst (48)', 'Marknad (40)', 'Ekonomi/HR (30)'];
+        if (mode === 'headcount') {
+          config = {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [{
+                label: 'Antal medarbetare som slutat (personer)',
+                data: [36, 14, 15, 3, 1],
+                backgroundColor: ['#4f46e5', '#6366f1', '#f59e0b', '#94a3b8', '#94a3b8'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, title: { display: true, text: 'Antal personer' } } }
+            }
+          };
+        } else {
+          config = {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [
+                {
+                  label: 'Personalomsättning (%)',
+                  data: [24, 17, 31, 8, 3],
+                  backgroundColor: ['#4f46e5', '#6366f1', '#ef4444', '#10b981', '#10b981'],
+                  borderRadius: 8
+                },
+                {
+                  type: 'line',
+                  label: 'Branschsnitt (14%)',
+                  data: [14, 14, 14, 14, 14],
+                  borderColor: '#0f172a',
+                  borderDash: [6, 6],
+                  borderWidth: 2,
+                  pointRadius: 0
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 40, title: { display: true, text: 'Procent (%)' } } }
+            }
+          };
+        }
+      } else if (chapterIndex === 1) {
+        // KAPITEL 2: Korrelation vs Kausalitet (Espresso vs Övertid)
+        const labels = ['IT/Utveckling', 'Sälj', 'Kundtjänst', 'Marknad', 'Ekonomi/HR'];
+        if (mode === 'overtime') {
+          config = {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [{
+                label: 'Genomsnittlig övertid (timmar / vecka)',
+                data: [9.4, 6.8, 1.4, 1.8, 1.2],
+                backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#10b981'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 12, title: { display: true, text: 'Timmar / vecka' } } }
+            }
+          };
+        } else {
+          config = {
+            type: 'bar',
+            data: {
+              labels,
+              datasets: [{
+                label: 'Espressokoppar per person / dag',
+                data: [4.2, 3.6, 1.5, 1.9, 1.6],
+                backgroundColor: ['#78350f', '#92400e', '#d97706', '#b45309', '#b45309'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 5, title: { display: true, text: 'Koppar / dag' } } }
+            }
+          };
+        }
+      } else if (chapterIndex === 2) {
+        // KAPITEL 3: Simpsons Paradox
+        if (mode === 'segmented') {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Junior-roller (Hög befordringstakt)', 'Senior-roller (Trångt nålsöga)'],
+              datasets: [
+                {
+                  label: 'Grupp A – Befordringsgrad (%)',
+                  data: [60, 20],
+                  backgroundColor: '#94a3b8',
+                  borderRadius: 8
+                },
+                {
+                  label: 'Grupp B – Befordringsgrad (%)',
+                  data: [65, 25],
+                  backgroundColor: '#10b981',
+                  borderRadius: 8
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 80, title: { display: true, text: 'Andel befordrade (%)' } } }
+            }
+          };
+        } else {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Totalt över hela företaget (Sammanslagen data)'],
+              datasets: [
+                {
+                  label: 'Grupp A (90 av 200 befordrade)',
+                  data: [45],
+                  backgroundColor: '#4f46e5',
+                  borderRadius: 8
+                },
+                {
+                  label: 'Grupp B (70 av 200 befordrade)',
+                  data: [35],
+                  backgroundColor: '#f59e0b',
+                  borderRadius: 8
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 80, title: { display: true, text: 'Andel befordrade (%)' } } }
+            }
+          };
+        }
+      } else if (chapterIndex === 3) {
+        // KAPITEL 4: Överlevnadsbias i eNPS
+        if (mode === 'with_exits') {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Förra året (Alla)', 'Årets enkät (Endast kvarvarande)', 'Justerat inkl. de 40 som slutat'],
+              datasets: [{
+                label: 'eNPS-resultat (-100 till +100)',
+                data: [10, 38, 12],
+                backgroundColor: ['#64748b', '#94a3b8', '#ef4444'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 50, title: { display: true, text: 'eNPS-poäng' } } }
+            }
+          };
+        } else {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Förra årets mätning', 'Årets mätning (Utskickad efter avhopp)'],
+              datasets: [{
+                label: 'Uppmätt eNPS bland kvarvarande personal',
+                data: [10, 38],
+                backgroundColor: ['#64748b', '#10b981'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 50, title: { display: true, text: 'eNPS-poäng' } } }
+            }
+          };
+        }
+      } else if (chapterIndex === 4) {
+        // KAPITEL 5: Medelvärde vs Median
+        if (mode === 'median') {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Marknad (Median / P50)', 'Marknadsbenchmark (Median)'],
+              datasets: [{
+                label: 'Medianlön (SEK / mån)',
+                data: [39000, 48000],
+                backgroundColor: ['#ef4444', '#0f172a'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 65000, title: { display: true, text: 'SEK / månad' } } }
+            }
+          };
+        } else {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Marknad (Medelvärde inkl. VP)', 'Marknadsbenchmark'],
+              datasets: [{
+                label: 'Snittlön (SEK / mån)',
+                data: [52000, 48000],
+                backgroundColor: ['#10b981', '#0f172a'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 65000, title: { display: true, text: 'SEK / månad' } } }
+            }
+          };
+        }
+      } else if (chapterIndex === 5) {
+        // KAPITEL 6: Kohortanalys
+        if (mode === 'cohorts') {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['0–6 månader', '6–12 månader', '1–3 år', '3+ år (Veteraner)'],
+              datasets: [{
+                label: 'Personalomsättning per anställningstid (%)',
+                data: [42, 24, 12, 5],
+                backgroundColor: ['#ef4444', '#f59e0b', '#6366f1', '#10b981'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 50, title: { display: true, text: 'Omsättning (%)' } } }
+            }
+          };
+        } else {
+          config = {
+            type: 'line',
+            data: {
+              labels: ['Q1', 'Q2', 'Q3', 'Q4'],
+              datasets: [{
+                label: 'Sammanslagen omsättning över tid (%)',
+                data: [15.1, 14.8, 15.3, 15.0],
+                borderColor: '#4f46e5',
+                backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                fill: true,
+                tension: 0.3,
+                borderWidth: 3
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 50, title: { display: true, text: 'Omsättning (%)' } } }
+            }
+          };
+        }
+      } else if (chapterIndex === 6) {
+        // KAPITEL 7: Urvalsstorlek & Små team
+        if (mode === 'team_size') {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Juridik & Admin (1 avhopp)', 'IT/Utveckling (9 avhopp)', 'Sälj (5 avhopp)', 'Kundtjänst (4 avhopp)'],
+              datasets: [{
+                label: 'Antal anställda i teamet (Urvalsstorlek N)',
+                data: [5, 150, 82, 48],
+                backgroundColor: ['#f59e0b', '#4f46e5', '#6366f1', '#3b82f6'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, title: { display: true, text: 'Antal personer i teamet' } } }
+            }
+          };
+        } else {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Juridik & Admin', 'IT/Utveckling', 'Sälj', 'Kundtjänst'],
+              datasets: [{
+                label: 'Kvartalsomsättning (%)',
+                data: [20, 6, 6.1, 8.3],
+                backgroundColor: ['#ef4444', '#6366f1', '#6366f1', '#6366f1'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 25, title: { display: true, text: 'Kvartalsomsättning (%)' } } }
+            }
+          };
+        }
+      } else if (chapterIndex === 7) {
+        // KAPITEL 8: Styrelserummet & Slutgiltig ROI
+        if (mode === 'roi') {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Paket A: Generell lön', 'Paket B: Riktad trippelinsats', 'Paket C: Mer annonser'],
+              datasets: [{
+                label: 'Beräknad nettobesparing År 1 (Miljoner SEK)',
+                data: [-0.6, 5.4, -1.8],
+                backgroundColor: ['#f59e0b', '#10b981', '#ef4444'],
+                borderRadius: 8
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { min: -2.5, max: 6.5, title: { display: true, text: 'Miljoner SEK' } } }
+            }
+          };
+        } else {
+          config = {
+            type: 'bar',
+            data: {
+              labels: ['Nuläge', 'Paket A (Generell)', 'Paket B (Riktad)', 'Paket C (Annonser)'],
+              datasets: [
+                {
+                  label: 'Prognos Personalomsättning (%)',
+                  data: [19.7, 18.4, 12.8, 19.5],
+                  backgroundColor: ['#64748b', '#f59e0b', '#10b981', '#ef4444'],
+                  borderRadius: 8
+                },
+                {
+                  type: 'line',
+                  label: 'Målnivå / Branschsnitt (14%)',
+                  data: [14, 14, 14, 14],
+                  borderColor: '#0f172a',
+                  borderDash: [6, 6],
+                  borderWidth: 2,
+                  pointRadius: 0
+                }
+              ]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: true, position: 'bottom' } },
+              scales: { y: { beginAtZero: true, max: 25, title: { display: true, text: 'Omsättning (%)' } } }
+            }
+          };
+        }
+      }
+
+      gameState.chartInstance = new Chart(ctx, config);
+    }
+
+    // Ladda ett kapitel i gränssnittet
+    function loadChapter(index) {
+      const ch = chapters[index];
+      gameState.answered = false;
+      gameState.activeToggle = ch.controls[0].id;
+
+      updateHeader();
+
+      // Uppdatera texter
+      elChapterBadge.textContent = ch.badge;
+      elChapterTopic.textContent = ch.topic;
+      elChapterTitle.textContent = ch.title;
+      elChapterStory.innerHTML = ch.story;
+
+      elChartTitle.textContent = ch.chartTitle;
+      elChartSubtitle.textContent = ch.chartSubtitle;
+      elFootnoteLeft.innerHTML = `<span>${ch.footnoteLeft}</span><span class="font-semibold text-slate-700">${ch.footnoteRight}</span>`;
+
+      elFactTitle.textContent = ch.factTitle;
+      elFactDescription.textContent = ch.factDescription;
+      elFactFormula.textContent = ch.factFormula;
+      elFactTip.textContent = ch.factTip;
+
+      // Rendera växlingsknappar för diagrammet
+      elChartControls.innerHTML = '';
+      ch.controls.forEach((ctrl, idx) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.textContent = ctrl.label;
+        btn.className = idx === 0
+          ? 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-sm transition cursor-pointer'
+          : 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer';
+        
+        btn.addEventListener('click', () => {
+          gameState.activeToggle = ctrl.id;
+          Array.from(elChartControls.children).forEach(b => {
+            b.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 transition cursor-pointer';
+          });
+          btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 text-white shadow-sm transition cursor-pointer';
+          renderChart(index, ctrl.id);
+        });
+        elChartControls.appendChild(btn);
+      });
+
+      // Anpassa grid-kolumner beroende på om det är 3 eller 4 svarsalternativ
+      elChoicesContainer.className = ch.choices.length === 4
+        ? 'grid grid-cols-1 md:grid-cols-2 gap-4'
+        : 'grid grid-cols-1 md:grid-cols-3 gap-4';
+
+      // Rendera svarsalternativ
+      elChoicesContainer.innerHTML = '';
+      ch.choices.forEach((choice, idx) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'choice-card text-left p-5 rounded-2xl border-2 border-slate-200 bg-slate-50/50 hover:border-indigo-500 hover:bg-white flex flex-col justify-between cursor-pointer';
+        card.innerHTML = `
+          <div>
+            <span class="inline-block text-[11px] font-bold uppercase tracking-wider text-indigo-600 mb-1.5">Alternativ ${idx + 1}</span>
+            <h4 class="text-sm sm:text-base font-bold text-slate-900 mb-2">${choice.title}</h4>
+            <p class="text-xs sm:text-sm text-slate-600 leading-relaxed">${choice.desc}</p>
+          </div>
+          <div class="mt-4 pt-3 border-t border-slate-200/70 flex items-center justify-between text-xs font-semibold text-indigo-600">
+            <span>Välj slutsats</span>
+            <span>→</span>
+          </div>
+        `;
+        card.addEventListener('click', () => handleChoice(choice, card));
+        elChoicesContainer.appendChild(card);
+      });
+
+      // Dölj feedback-rutan
+      elFeedbackPanel.classList.add('hidden');
+
+      // Rendera diagram
+      renderChart(index, ch.controls[0].id);
+
+      // Scrolla mjukt till toppen vid kapitelbyte
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Hantera spelarens val
+    function handleChoice(choice, selectedCard) {
+      if (gameState.answered) return;
+      gameState.answered = true;
+
+      const ch = chapters[gameState.currentChapterIndex];
+
+      // Uppdatera poäng, trovärdighet och historik
+      gameState.credibility = Math.max(0, Math.min(100, gameState.credibility + choice.scoreDelta));
+      gameState.points += choice.pointsDelta;
+      gameState.history.push({
+        chapterTitle: ch.title,
+        topic: ch.topic,
+        choiceTitle: choice.title,
+        isOptimal: choice.isOptimal,
+        feedbackTitle: choice.feedbackTitle
+      });
+      updateHeader();
+
+      // Markera korten visuellt
+      Array.from(elChoicesContainer.children).forEach(btn => {
+        btn.disabled = true;
+        btn.classList.remove('hover:border-indigo-500', 'hover:bg-white', 'cursor-pointer');
+        btn.classList.add('opacity-60', 'cursor-default');
+      });
+
+      selectedCard.classList.remove('opacity-60', 'border-slate-200');
+      if (choice.isOptimal) {
+        selectedCard.classList.add('border-emerald-500', 'bg-emerald-50/40', 'ring-2', 'ring-emerald-500/20');
+      } else {
+        selectedCard.classList.add('border-amber-500', 'bg-amber-50/40', 'ring-2', 'ring-amber-500/20');
+      }
+
+      // Växla automatiskt till den avslöjande diagramvyn om spelaren inte redan tittat på den
+      const revealingToggleId = ch.controls[1]?.id;
+      if (revealingToggleId && gameState.activeToggle !== revealingToggleId) {
+        const revealBtn = elChartControls.children[1];
+        if (revealBtn) revealBtn.click();
+      }
+
+      // Visa pedagogisk feedback
+      elFeedbackPanel.classList.remove('hidden', 'bg-emerald-50', 'border-emerald-200', 'bg-amber-50', 'border-amber-200');
+      elFeedbackPointsDelta.textContent = `+${choice.pointsDelta} p`;
+
+      if (choice.isOptimal) {
+        elFeedbackPanel.classList.add('bg-emerald-50', 'border-emerald-200');
+        elFeedbackIcon.className = 'w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center font-bold text-lg bg-emerald-600 text-white';
+        elFeedbackIcon.textContent = '✓';
+        elFeedbackHeading.className = 'text-base sm:text-lg font-extrabold text-emerald-950';
+        elFeedbackScoreDelta.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-200 text-emerald-900';
+        elFeedbackScoreDelta.textContent = `+${choice.scoreDelta}% Trovärdighet`;
+        elFeedbackExplanation.className = 'text-sm leading-relaxed mt-1 text-emerald-900';
+      } else {
+        elFeedbackPanel.classList.add('bg-amber-50', 'border-amber-200');
+        elFeedbackIcon.className = 'w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center font-bold text-lg bg-amber-500 text-white';
+        elFeedbackIcon.textContent = '!';
+        elFeedbackHeading.className = 'text-base sm:text-lg font-extrabold text-amber-950';
+        elFeedbackScoreDelta.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-amber-200 text-amber-900';
+        elFeedbackScoreDelta.textContent = `${choice.scoreDelta}% Trovärdighet`;
+        elFeedbackExplanation.className = 'text-sm leading-relaxed mt-1 text-amber-900';
+      }
+
+      elFeedbackHeading.textContent = choice.feedbackTitle;
+      elFeedbackExplanation.textContent = choice.feedbackText;
+
+      // Uppdatera knapp-text för sista kapitlet
+      if (gameState.currentChapterIndex === chapters.length - 1) {
+        elNextChapterBtn.querySelector('span').textContent = 'Se slutresultat & Analytiker-titel →';
+      } else {
+        elNextChapterBtn.querySelector('span').textContent = 'Nästa kapitel →';
+      }
+
+      elFeedbackPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    // Nästa kapitel eller slutskärm
+    elNextChapterBtn.addEventListener('click', () => {
+      if (gameState.currentChapterIndex < chapters.length - 1) {
+        gameState.currentChapterIndex++;
+        loadChapter(gameState.currentChapterIndex);
+      } else {
+        showSummary();
+      }
+    });
+
+    // Visa sammanfattningsskärmen
+    function showSummary() {
+      elGameView.classList.add('hidden');
+      elSummaryView.classList.remove('hidden');
+
+      const score = gameState.credibility;
+      const correctCount = gameState.history.filter(h => h.isOptimal).length;
+
+      document.getElementById('final-points-value').textContent = `${gameState.points} p`;
+      document.getElementById('final-score-value').textContent = `${score}%`;
+      document.getElementById('final-correct-count').textContent = `${correctCount} / ${chapters.length}`;
+
+      const rankTitleEl = document.getElementById('final-rank-title');
+      const rankSubEl = document.getElementById('final-rank-subtitle');
+
+      if (score >= 90 && correctCount >= 7) {
+        rankTitleEl.textContent = "Chief People Scientist";
+        rankSubEl.textContent = "Enastående! Du genomskådade samtliga statistiska fällor och gav styrelsen ett vattentätt beslutsunderlag.";
+      } else if (score >= 65) {
+        rankTitleEl.textContent = "Senior Data Detective";
+        rankSubEl.textContent = "Starkt jobbat! Du har god koll på hur HR-data ska segmenteras och omsättas i konkreta affärsbeslut.";
+      } else {
+        rankTitleEl.textContent = "Junior Spreadsheet-navigatör";
+        rankSubEl.textContent = "Bra kämpat! Du stötte på några klassiska statistiska fällor på vägen – nu vet du exakt hur du undviker dem nästa gång.";
+      }
+
+      const recapList = document.getElementById('summary-recap-list');
+      recapList.innerHTML = '';
+
+      gameState.history.forEach((item, idx) => {
+        const box = document.createElement('div');
+        box.className = `p-4 rounded-2xl border ${item.isOptimal ? 'bg-emerald-50/60 border-emerald-200' : 'bg-amber-50/60 border-amber-200'}`;
+        box.innerHTML = `
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Kapitel ${idx + 1} • ${item.topic}</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full ${item.isOptimal ? 'bg-emerald-200 text-emerald-900' : 'bg-amber-200 text-amber-900'}">
+              ${item.isOptimal ? '✓ Bemästrad' : '! Fälla'}
+            </span>
+          </div>
+          <h4 class="text-sm font-bold text-slate-900 mb-1">${item.chapterTitle}</h4>
+          <p class="text-xs text-slate-700"><strong>Ditt val:</strong> ${item.choiceTitle}</p>
+          <p class="text-xs font-semibold mt-1 ${item.isOptimal ? 'text-emerald-800' : 'text-amber-800'}">${item.feedbackTitle}</p>
+        `;
+        recapList.appendChild(box);
+      });
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // Starta om spelet
+    document.getElementById('restart-btn').addEventListener('click', () => {
+      gameState.currentChapterIndex = 0;
+      gameState.credibility = 50;
+      gameState.points = 0;
+      gameState.history = [];
+      elSummaryView.classList.add('hidden');
+      elGameView.classList.remove('hidden');
+      loadChapter(0);
+    });
+
+    // Initiera spel vid sidladdning
+    window.addEventListener('DOMContentLoaded', () => {
+      loadChapter(0);
+    });
+  </script>
+</body>
+</html>
